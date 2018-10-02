@@ -54,7 +54,6 @@
             android:layout_height="56dp"
             android:layout_gravity="center_vertical"
             android:contentDescription="@string/image_description"
-            android:onClick="PhotoMessage"
             android:src="@drawable/ic_add_a_photo_black_24dp" />
     </LinearLayout>
 
