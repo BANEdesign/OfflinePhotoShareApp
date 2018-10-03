@@ -7,9 +7,7 @@ import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
-import android.graphics.BitmapFactory;
-import android.media.MediaPlayer;
-import android.media.MediaRecorder;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Message;
@@ -18,21 +16,19 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.ArrayAdapter;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.ListView;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import static android.content.ContentValues.TAG;
 
 
 public class MainActivity extends Activity {
@@ -44,15 +40,10 @@ public class MainActivity extends Activity {
 
     private static final int SELECT_IMAGE = 11;
     private static final int MY_PERMISSION_REQUEST_READ_EXTERNAL_STORAGE = 2;
-    private String selectedImagePath;
     private ImageView selectedImage;
 
-    private static String mFileName = null;
-    private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
-    private boolean permissiontoRecordAccepted = false;
-    private MediaRecorder mRecorder = null;
-    private MediaPlayer mPlayer = null;
-    private static final String LOG_TAG = "AudioRecordTest";
+    private static final int REQUEST_CAMERA_PERMISSION = 8;
+    static final int REQUEST_IMAGE_CAPTURE = 100;
 
     public static final String DEVICE_NAME = "device_name";
     public static final String TOAST = "toast";
@@ -68,12 +59,10 @@ public class MainActivity extends Activity {
     private String mConnectedDeviceName = null;
 
     private StringBuffer mOutStringBuffer;
-    private ListView mConversationView;
     private EditText mEditText;
     private ImageButton mButtonSend;
-    ImageButton connectWiFi, connectBT, attachPhoto;
-
-    //TODO add "Make Discoverable" button
+    ImageButton takePhoto, connectBT, attachPhoto;
+    Switch makeDiscoverable;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,9 +70,6 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         init();
-        // Record to the external cache directory for visibility
-        mFileName = getExternalCacheDir().getAbsolutePath();
-        mFileName += "/audiorecordtest.3gp";
 
         connectBT.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -93,22 +79,38 @@ public class MainActivity extends Activity {
             }
         });
 
-        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, REQUEST_RECORD_AUDIO_PERMISSION);
-
     }
 
     public void init() {
-        connectWiFi = findViewById(R.id.btn_connect_wifi);
+//        connectWiFi = findViewById(R.id.btn_connect_wifi);
         connectBT = findViewById(R.id.btn_connect_bt);
-        mConversationView = findViewById(R.id.message_history);
+        takePhoto = findViewById(R.id.btn_take_photo);
+        selectedImage = findViewById(R.id.selected_image);
+        // you might want to bring this back if you enable messages
+//        mConversationView = findViewById(R.id.message_history);
         mEditText = findViewById(R.id.edit_text_text_message);
         mButtonSend = findViewById(R.id.btn_send);
         attachPhoto = findViewById(R.id.btn_photo_attach);
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        makeDiscoverable = findViewById(R.id.menu_make_discoverable);
+
+        makeDiscoverable.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                if(makeDiscoverable.isChecked())
+                    ensureDiscoverable();
+            }
+        });
 
         attachPhoto.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 PhotoMessage(v);
+            }
+        });
+
+        takePhoto.setOnClickListener(new View.OnClickListener(){
+            public void onClick(View v){
+                takePicture(v);
             }
         });
 
@@ -149,19 +151,6 @@ public class MainActivity extends Activity {
 
 
     @Override
-    protected void onStop() {
-        super.onStop();
-        if (mRecorder != null) {
-            mRecorder.release();
-            mRecorder = null;
-        }
-        if (mPlayer != null) {
-            mPlayer.release();
-            mPlayer = null;
-        }
-    }
-
-    @Override
     public void onDestroy() {
         super.onDestroy();
         if (mChatService != null) {
@@ -191,6 +180,12 @@ public class MainActivity extends Activity {
     }
 
     public void permissionCheck() {
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+//                takePhoto.setEnabled(false);
+            ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE }, 0);
+        }
+
         if (ContextCompat.checkSelfPermission(getApplicationContext(),
                 Manifest.permission.READ_EXTERNAL_STORAGE)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -207,6 +202,7 @@ public class MainActivity extends Activity {
                 {Manifest.permission.READ_EXTERNAL_STORAGE},
                         MY_PERMISSION_REQUEST_READ_EXTERNAL_STORAGE);
             }
+
         } else {
             // Request image from the gallery app
             requestImageFromGallery();
@@ -218,6 +214,13 @@ public class MainActivity extends Activity {
         attachImageIntent.setType("image/*");
         attachImageIntent.setAction(Intent.ACTION_GET_CONTENT);
         startActivityForResult(Intent.createChooser(attachImageIntent, "Select Picture"), SELECT_IMAGE);
+    }
+
+    public void takePicture(View view) {
+        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+            startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+        }
     }
 
     @Override
@@ -241,7 +244,6 @@ public class MainActivity extends Activity {
                 Uri selectedImageUri = data.getData();
 
                 // Attach the selectedImage to the ImageView
-                selectedImage = findViewById(R.id.selected_image);
                 selectedImage.setImageURI(selectedImageUri);
             }
             break;
@@ -252,6 +254,15 @@ public class MainActivity extends Activity {
                 connectDevice(data);
             }
             break;
+
+            case REQUEST_IMAGE_CAPTURE:
+                if (resultCode == RESULT_OK) {
+                    Bundle extras = data.getExtras();
+                    if(extras != null) {
+                        Bitmap imageBitmap = (Bitmap) extras.get("data");
+                        selectedImage.setImageBitmap(imageBitmap);
+                    }
+                }
         }
     }
 
@@ -342,7 +353,7 @@ public class MainActivity extends Activity {
         // Initialize the array adapter for the conversation thread
         mConversationArrayAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1);
 
-        mConversationView.setAdapter(mConversationArrayAdapter);
+//        mConversationView.setAdapter(mConversationArrayAdapter);
 
         // Initialize the compose field with a listener for the return key
         mEditText.setOnEditorActionListener(mWriteListener);
@@ -421,8 +432,13 @@ public class MainActivity extends Activity {
                 }
             }
             break;
-            case REQUEST_RECORD_AUDIO_PERMISSION:
-            permissiontoRecordAccepted = grantResults[0] == PackageManager.PERMISSION_GRANTED;
+            case REQUEST_CAMERA_PERMISSION: {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED
+                        && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
+                    takePhoto.setEnabled(true);
+                    //TODO start camera activity
+                }
+            }
             break;
         }
     }
