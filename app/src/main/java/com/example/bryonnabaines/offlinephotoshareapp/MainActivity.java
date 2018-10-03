@@ -35,7 +35,7 @@ public class MainActivity extends Activity {
 
     private static final int REQUEST_ENABLE_BT = 1;
     private static final int REQUEST_CONNECT_DEVICE = 3;
-    private BluetoothChatService mChatService = null;
+    private BluetoothService mChatService = null;
     private BluetoothAdapter mBluetoothAdapter = null;
 
     private static final int SELECT_IMAGE = 11;
@@ -83,7 +83,6 @@ public class MainActivity extends Activity {
     }
 
     public void init() {
-//        connectWiFi = findViewById(R.id.btn_connect_wifi);
         connectBT = findViewById(R.id.btn_connect_bt);
         takePhoto = findViewById(R.id.btn_take_photo);
         selectedImage = findViewById(R.id.selected_image);
@@ -142,7 +141,7 @@ public class MainActivity extends Activity {
         // onResume() will be called when ACTION_REQUEST_ENABLE activity returns.
         if (mChatService != null) {
             // Only if the state is STATE_NONE, do we know that we haven't started already
-            if (mChatService.getState() == BluetoothChatService.STATE_NONE) {
+            if (mChatService.getState() == BluetoothService.STATE_NONE) {
                 // Start the Bluetooth chat services
                 mChatService.start();
             }
@@ -231,7 +230,7 @@ public class MainActivity extends Activity {
                 Toast.makeText(this, "Bluetooth Enabled", Toast.LENGTH_SHORT).show();
 
                 // Initialize the BluetoothChatService to perform bluetooth connection
-                mChatService = new BluetoothChatService(getApplicationContext(), mHandler);
+                mChatService = new BluetoothService(getApplicationContext(), mHandler);
             } else {
                 Toast.makeText(this, "Bluetooth not enabled", Toast.LENGTH_SHORT).show();
                 finish();
@@ -285,15 +284,15 @@ public class MainActivity extends Activity {
             switch (msg.what) {
                 case MESSAGE_STATE_CHANGE:
                 switch (msg.arg1) {
-                    case BluetoothChatService.STATE_CONNECTED:
+                    case BluetoothService.STATE_CONNECTED:
                     connectBT.setImageResource(R.drawable.ic_bluetooth_connected_black_24dp);
                     mConversationArrayAdapter.clear();
                     break;
-                    case BluetoothChatService.STATE_CONNECTING:
+                    case BluetoothService.STATE_CONNECTING:
                     connectBT.setImageResource(R.drawable.ic_bluetooth_searching_black_24dp);
                     break;
-                    case BluetoothChatService.STATE_LISTEN:
-                    case BluetoothChatService.STATE_NONE:
+                    case BluetoothService.STATE_LISTEN:
+                    case BluetoothService.STATE_NONE:
                     connectBT.setImageResource(R.drawable.ic_bluetooth_disabled_black_24dp);
                     //setStatus(R.string.title_not_connected);
                     break;
@@ -379,7 +378,7 @@ public class MainActivity extends Activity {
         });
 
         // Initialize the BluetoothChatService to perform bluetooth connections
-        mChatService = new BluetoothChatService(getApplicationContext(), mHandler);
+        mChatService = new BluetoothService(getApplicationContext(), mHandler);
 
         // Initialize the buffer for outgoing messages
         mOutStringBuffer = new StringBuffer("");
@@ -387,7 +386,7 @@ public class MainActivity extends Activity {
 
     private void sendMessage(String message) {
         // Check that we're actually connected before trying anything
-        if (mChatService.getState() != BluetoothChatService.STATE_CONNECTED) {
+        if (mChatService.getState() != BluetoothService.STATE_CONNECTED) {
             Toast.makeText(getApplicationContext(), R.string.not_connected, Toast.LENGTH_SHORT).show();
             return;
         }

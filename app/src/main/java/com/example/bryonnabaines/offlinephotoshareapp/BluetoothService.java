@@ -16,7 +16,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.UUID;
 
-public class BluetoothChatService {
+public class BluetoothService {
 
     private AcceptThread mAcceptThread;
     private ConnectThread mConnectThread;
@@ -51,7 +51,7 @@ public class BluetoothChatService {
     private int mNewState;
 
 
-    public BluetoothChatService(Context context, Handler handler) {
+    public BluetoothService(Context context, Handler handler) {
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         mState = STATE_NONE;
         mNewState = mState;
@@ -90,7 +90,7 @@ public class BluetoothChatService {
 
                 /* Handle if connection is accepted */
                 if (socket != null) {
-                    synchronized (BluetoothChatService.this) {
+                    synchronized (BluetoothService.this) {
                         switch (mState) {
                             case STATE_LISTEN:
                             case STATE_CONNECTING:
@@ -163,7 +163,7 @@ public class BluetoothChatService {
             }
 
             // Reset the ConnectThread because we're done
-            synchronized (BluetoothChatService.this) {
+            synchronized (BluetoothService.this) {
                 mConnectThread = null;
             }
 
@@ -264,7 +264,7 @@ public class BluetoothChatService {
         updateUserInterfaceTitle();
 
         // Start the service over to restart listening mode
-        BluetoothChatService.this.start();
+        BluetoothService.this.start();
     }
 
     private void connectionLost() {
@@ -280,7 +280,7 @@ public class BluetoothChatService {
         updateUserInterfaceTitle();
 
         // Start the service over to restart listening mode
-        BluetoothChatService.this.start();
+        BluetoothService.this.start();
     }
 
 
