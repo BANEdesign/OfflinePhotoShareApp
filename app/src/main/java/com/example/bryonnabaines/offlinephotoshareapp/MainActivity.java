@@ -63,6 +63,7 @@ public class MainActivity extends Activity {
     private ImageButton mButtonSend;
     ImageButton takePhoto, connectBT, attachPhoto;
     Switch makeDiscoverable;
+    Uri selectedImageUri;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -240,7 +241,7 @@ public class MainActivity extends Activity {
             case SELECT_IMAGE:
             if (resultCode == RESULT_OK) {
 
-                Uri selectedImageUri = data.getData();
+                selectedImageUri = data.getData();
 
                 // Attach the selectedImage to the ImageView
                 selectedImage.setImageURI(selectedImageUri);
@@ -363,6 +364,16 @@ public class MainActivity extends Activity {
                 // Send a message using content of the edit text widget
 
                 String message = mEditText.getText().toString();
+                if(selectedImageUri != null){
+
+                    Intent sendPhotoIntent = new Intent();
+                    sendPhotoIntent.setAction(Intent.ACTION_SEND);
+                    sendPhotoIntent.setType("text/plain");
+                    sendPhotoIntent.putExtra(Intent.EXTRA_STREAM, selectedImageUri );
+                    sendPhotoIntent.setClassName("com.android.bluetooth", "com.example.bryonnabaines.offlinephotoshareapp");
+                    startActivity(sendPhotoIntent);
+
+                }
                 sendMessage(message);
             }
         });
@@ -435,7 +446,6 @@ public class MainActivity extends Activity {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED
                         && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
                     takePhoto.setEnabled(true);
-                    //TODO start camera activity
                 }
             }
             break;
