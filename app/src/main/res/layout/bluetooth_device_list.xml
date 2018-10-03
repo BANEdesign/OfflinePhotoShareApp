@@ -8,6 +8,7 @@
         android:id="@+id/new_devices"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1" />
+        android:layout_weight="1"
+        android:text="Scanning for Devices"/>
 
 </LinearLayout>

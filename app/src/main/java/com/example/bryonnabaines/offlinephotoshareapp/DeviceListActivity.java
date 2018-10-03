@@ -2,6 +2,7 @@ package com.example.bryonnabaines.offlinephotoshareapp;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.Dialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
@@ -10,16 +11,11 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
-import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
-
-
-import org.w3c.dom.Text;
 
 import java.util.Set;
 
@@ -29,7 +25,6 @@ public class DeviceListActivity extends Activity {
     public static String EXTRA_DEVICE_ADDRESS = "device_address";
     private ArrayAdapter<String> mNewDeviceArrayAdapter;
     int MY_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION = 1;
-
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -46,9 +41,15 @@ public class DeviceListActivity extends Activity {
         * Set adapter for it
         * */
 
-        ListView newDeviceListView = (ListView) findViewById(R.id.new_devices);
+        Dialog dialog = new Dialog(this);
+        dialog.setContentView(R.layout.bluetooth_device_list);
+
+        ListView newDeviceListView = (ListView) dialog.findViewById(R.id.new_devices);
         newDeviceListView.setAdapter(mNewDeviceArrayAdapter);
         newDeviceListView.setOnItemClickListener(mDeviceClickListener);
+        dialog.setCancelable(true);
+        dialog.setTitle("Scanning for devices");
+        dialog.show();
 
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         this.registerReceiver(mReceiver, filter);
@@ -67,9 +68,6 @@ public class DeviceListActivity extends Activity {
     * Start device discovery using bluetooth adapter
     * */
     private void discoverDevices() {
-        //Toast.makeText(this, "discoverDevices()", Toast.LENGTH_SHORT).show();
-
-        setTitle("Scanning for devices");
 
         // If we are already discovering bluetooth devices stop it
         if (mBtAdapter.isDiscovering()) {
