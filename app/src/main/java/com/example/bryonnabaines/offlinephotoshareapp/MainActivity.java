@@ -116,7 +116,6 @@ public class MainActivity extends Activity {
 
         if (mBluetoothAdapter == null) {
             Toast.makeText(this, "Device does not support bluetooth", Toast.LENGTH_SHORT).show();
-            finish();
         }
     }
 
@@ -233,7 +232,6 @@ public class MainActivity extends Activity {
                 mChatService = new BluetoothService(getApplicationContext(), mHandler);
             } else {
                 Toast.makeText(this, "Bluetooth not enabled", Toast.LENGTH_SHORT).show();
-                finish();
             }
             break;
 
